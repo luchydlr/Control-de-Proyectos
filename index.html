@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seguimiento de Proyectos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#EEF1F4;}
+:root{
+  --bg:#EEF1F4;
+  --panel:#FFFFFF;
+  --ink:#1B2430;
+  --ink-soft:#5B6674;
+  --steel:#2E3D50;
+  --steel-2:#3F5165;
+  --orange:#E8622C;
+  --orange-dim:#F7D9CB;
+  --green:#2F9E5B;
+  --green-dim:#DCF0E3;
+  --amber:#C98A11;
+  --amber-dim:#FBEECB;
+  --maroon:#8C2F39;
+  --maroon-dim:#F2D9DB;
+  --blue:#2F6FA6;
+  --blue-dim:#DCE9F4;
+  --line:#DCE1E7;
+  --line-2:#C6CDD5;
+}
+
+*{box-sizing:border-box;}
+
+.app{
+  font-family:'Inter',sans-serif;
+  background:var(--bg);
+  color:var(--ink);
+  min-height:100%;
+  padding:0;
+  -webkit-font-smoothing:antialiased;
+}
+
+.app h1,.app h2,.app h3,.app .disp{
+  font-family:'Space Grotesk',sans-serif;
+}
+
+.mono{font-family:'IBM Plex Mono',monospace;}
+
+/* ---------- topbar ---------- */
+.topbar{
+  background:var(--steel);
+  color:#fff;
+  padding:22px 26px 22px;
+  border-radius:0 0 18px 18px;
+  position:relative;
+  overflow:hidden;
+}
+.topbar::after{
+  content:"";
+  position:absolute;
+  right:-40px;top:-40px;
+  width:180px;height:180px;
+  background:radial-gradient(circle,var(--orange) 0%,transparent 70%);
+  opacity:.18;
+}
+.topbar-top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  position:relative;
+  z-index:1;
+  margin-bottom:16px;
+}
+.topbar-main{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:20px;
+  position:relative;
+  z-index:1;
+  flex-wrap:wrap;
+}
+.topbar-actions{
+  display:flex;
+  gap:10px;
+  flex-shrink:0;
+}
+.eyebrow{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:11px;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--orange);
+  margin:0;
+}
+.topbar h1{
+  font-size:24px;
+  margin:6px 0 0;
+  font-weight:700;
+  letter-spacing:-0.01em;
+}
+.topbar p{
+  margin:8px 0 0;
+  color:#B7C1CC;
+  font-size:13.5px;
+  max-width:520px;
+  line-height:1.5;
+}
+.btn{
+  font-family:'Inter',sans-serif;
+  font-weight:600;
+  font-size:13.5px;
+  border:none;
+  border-radius:10px;
+  padding:11px 18px;
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  transition:transform .12s ease, box-shadow .12s ease, opacity .12s ease;
+}
+.btn:active{transform:scale(.97);}
+.btn-primary{background:var(--orange);color:#fff;box-shadow:0 6px 16px -6px rgba(232,98,44,.6);}
+.btn-primary:hover{opacity:.92;}
+.btn-ghost{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.25);}
+.btn-ghost:hover{background:rgba(255,255,255,.18);}
+.btn-outline{background:transparent;color:var(--steel);border:1.5px solid var(--line-2);}
+.btn-outline:hover{border-color:var(--steel);}
+.btn-danger-text{background:transparent;color:var(--maroon);font-size:12.5px;padding:8px 10px;}
+.btn-sm{padding:7px 12px;font-size:12.5px;border-radius:8px;}
+
+/* stats strip */
+.stats{
+  display:flex;
+  gap:10px;
+  margin-top:20px;
+  position:relative;
+  z-index:1;
+  flex-wrap:wrap;
+}
+.stat{
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:10px;
+  padding:10px 14px;
+  min-width:96px;
+}
+.stat .num{font-family:'IBM Plex Mono',monospace;font-size:19px;font-weight:600;color:#fff;}
+.stat .lbl{font-size:10.5px;color:#9FADB9;text-transform:uppercase;letter-spacing:.08em;margin-top:2px;}
+
+/* ---------- controls ---------- */
+.controls{
+  display:flex;
+  gap:10px;
+  padding:18px 26px 6px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+.controls input[type="text"], .controls select{
+  font-family:'Inter',sans-serif;
+  font-size:13.5px;
+  padding:9px 12px;
+  border-radius:9px;
+  border:1.5px solid var(--line-2);
+  background:var(--panel);
+  color:var(--ink);
+  outline:none;
+}
+.controls input[type="text"]{flex:1;min-width:180px;}
+.controls select{cursor:pointer;}
+.controls input:focus, .controls select:focus{border-color:var(--orange);}
+
+/* ---------- list ---------- */
+.list{padding:14px 26px 60px;display:flex;flex-direction:column;gap:12px;}
+
+.card{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-left:4px solid var(--line-2);
+  border-radius:14px;
+  overflow:hidden;
+  transition:box-shadow .15s ease, border-left-color .15s ease;
+}
+.card:hover{box-shadow:0 4px 18px -8px rgba(27,36,48,.18);}
+.card.card-por_iniciar{border-left-color:var(--maroon);}
+.card.card-en_pausa{border-left-color:var(--amber);}
+.card.card-en_progreso{border-left-color:var(--blue);}
+.card.card-completado{border-left-color:var(--green);}
+
+.card-head{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  padding:14px 16px;
+  cursor:pointer;
+  user-select:none;
+}
+.idx{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:12px;
+  color:var(--ink-soft);
+  min-width:22px;
+}
+.card-titles{flex:1;min-width:0;}
+.card-titles .proj{font-weight:600;font-size:14.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.card-titles .meta{font-size:12px;color:var(--ink-soft);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+.progress-mini{width:110px;flex-shrink:0;display:flex;flex-direction:column;gap:4px;}
+.progress-mini .bar{height:6px;border-radius:4px;background:var(--line);overflow:hidden;}
+.progress-mini .bar > div{height:100%;background:var(--orange);border-radius:4px;transition:width .3s ease;}
+.progress-mini .pct{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);text-align:right;}
+
+.badge{
+  font-size:11px;
+  font-weight:600;
+  padding:5px 10px;
+  border-radius:20px;
+  white-space:nowrap;
+  letter-spacing:.02em;
+}
+.badge-por_iniciar{background:var(--maroon-dim);color:var(--maroon);}
+.badge-en_pausa{background:var(--amber-dim);color:var(--amber);}
+.badge-en_progreso{background:var(--blue-dim);color:var(--blue);}
+.badge-completado{background:var(--green-dim);color:var(--green);}
+
+.valor-mini{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:13px;
+  font-weight:600;
+  min-width:96px;
+  text-align:right;
+  color:var(--ink);
+  flex-shrink:0;
+}
+
+.chev{
+  color:var(--ink-soft);
+  transition:transform .18s ease;
+  flex-shrink:0;
+}
+.card.open .chev{transform:rotate(90deg);}
+
+.card-body{
+  display:none;
+  padding:2px 18px 22px;
+  border-top:1px solid var(--line);
+}
+.card.open .card-body{display:block;}
+
+/* field grid */
+.field-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+  gap:12px;
+  margin-top:16px;
+}
+.field-grid.wide{grid-template-columns:repeat(auto-fit,minmax(220px,1fr));}
+.field{display:flex;flex-direction:column;gap:5px;}
+.field label{
+  font-size:10.5px;
+  text-transform:uppercase;
+  letter-spacing:.07em;
+  color:var(--ink-soft);
+  font-weight:600;
+}
+.field input, .field select, .field textarea{
+  font-family:'Inter',sans-serif;
+  font-size:13.5px;
+  padding:9px 10px;
+  border-radius:8px;
+  border:1.5px solid var(--line-2);
+  background:#FBFCFD;
+  color:var(--ink);
+  outline:none;
+  width:100%;
+}
+.field input.mono-in{font-family:'IBM Plex Mono',monospace;}
+.field textarea{resize:vertical;min-height:56px;font-family:'Inter',sans-serif;}
+.field input:focus, .field select:focus, .field textarea:focus{border-color:var(--orange);background:#fff;}
+.field input:disabled, .field textarea:disabled, .field select:disabled{
+  background:#E7EAED;
+  color:var(--ink-soft);
+  cursor:not-allowed;
+  border-color:var(--line);
+}
+.lock-tag{
+  font-family:'Inter',sans-serif;
+  font-size:11px;
+  font-weight:600;
+  color:var(--ink-soft);
+  background:var(--line);
+  padding:3px 9px;
+  border-radius:20px;
+  margin-left:8px;
+  text-transform:none;
+  letter-spacing:normal;
+}
+.ad-toggle-wrap{margin-top:6px;}
+.user-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  background:rgba(255,255,255,.1);
+  border:1px solid rgba(255,255,255,.25);
+  color:#fff;
+  font-family:'Inter',sans-serif;
+  font-size:12.5px;
+  font-weight:600;
+  padding:7px 14px;
+  border-radius:20px;
+  cursor:pointer;
+  transition:background .12s ease;
+  flex-shrink:0;
+}
+.user-pill:hover{background:rgba(255,255,255,.2);}
+.user-pill.logged{background:var(--blue);border-color:var(--blue);}
+.user-pill.admin{background:var(--orange);border-color:var(--orange);}
+.stage.locked{pointer-events:none;opacity:.55;cursor:not-allowed;}
+.readonly-tag{
+  font-family:'Inter',sans-serif;
+  font-size:11px;
+  font-weight:600;
+  color:var(--ink-soft);
+  background:var(--line);
+  padding:3px 9px;
+  border-radius:20px;
+  margin-left:8px;
+  text-transform:none;
+  letter-spacing:normal;
+}
+
+.section-title{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:12.5px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+  color:var(--steel-2);
+  margin:22px 0 10px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.section-title::before{
+  content:"";
+  width:4px;height:14px;
+  background:var(--orange);
+  border-radius:2px;
+  display:inline-block;
+}
+
+/* pipeline / signature stage tracker */
+.pipeline{
+  display:flex;
+  gap:4px;
+  margin-top:6px;
+  flex-wrap:wrap;
+}
+.stage{
+  flex:1;
+  min-width:76px;
+  cursor:pointer;
+  border:none;
+  background:none;
+  padding:0;
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  gap:6px;
+}
+.stage .plate{
+  height:34px;
+  border-radius:6px;
+  background:#E3E7EB;
+  border:1.5px solid var(--line-2);
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:background .15s ease, border-color .15s ease;
+}
+.stage .plate::before, .stage .plate::after{
+  content:"";
+  position:absolute;
+  width:5px;height:5px;
+  border-radius:50%;
+  background:rgba(27,36,48,.18);
+  top:50%;transform:translateY(-50%);
+}
+.stage .plate::before{left:6px;}
+.stage .plate::after{right:6px;}
+.stage.checked .plate{background:var(--orange);border-color:var(--orange);}
+.stage.checked .plate::before, .stage.checked .plate::after{background:rgba(255,255,255,.55);}
+.stage .plate svg{opacity:0;transition:opacity .15s ease;}
+.stage.checked .plate svg{opacity:1;}
+.stage .lbl{
+  font-size:9.5px;
+  text-align:center;
+  color:var(--ink-soft);
+  text-transform:uppercase;
+  letter-spacing:.03em;
+  line-height:1.25;
+  font-weight:600;
+}
+.stage.checked .lbl{color:var(--ink);}
+
+.avance-row{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  margin-top:12px;
+}
+.avance-bar{flex:1;height:8px;border-radius:5px;background:var(--line);overflow:hidden;}
+.avance-bar > div{height:100%;background:linear-gradient(90deg,var(--orange),#F09165);border-radius:5px;transition:width .3s ease;}
+.avance-num{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:15px;min-width:44px;text-align:right;}
+
+/* externos */
+.ext-row{
+  display:grid;
+  grid-template-columns:1fr 140px 34px;
+  gap:8px;
+  margin-bottom:8px;
+  align-items:center;
+}
+.ext-row input{
+  font-family:'Inter',sans-serif;
+  font-size:13px;
+  padding:8px 10px;
+  border-radius:7px;
+  border:1.5px solid var(--line-2);
+  background:#FBFCFD;
+  outline:none;
+}
+.ext-row input:focus{border-color:var(--orange);background:#fff;}
+.ext-row input.val{font-family:'IBM Plex Mono',monospace;text-align:right;}
+.ext-remove{
+  width:30px;height:30px;
+  border-radius:7px;
+  border:1.5px solid var(--line-2);
+  background:#fff;
+  color:var(--maroon);
+  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+}
+.ext-remove:hover{background:var(--maroon-dim);}
+.ext-add{
+  font-size:12.5px;
+  font-weight:600;
+  color:var(--orange);
+  background:none;
+  border:1.5px dashed var(--orange-dim);
+  border-radius:8px;
+  padding:8px 12px;
+  cursor:pointer;
+  width:100%;
+  margin-top:4px;
+}
+.ext-add:hover{background:var(--orange-dim);}
+
+.total-line{
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+  margin-top:16px;
+  padding-top:14px;
+  border-top:1.5px dashed var(--line-2);
+}
+.total-line .lbl{font-size:12px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.06em;font-weight:600;}
+.total-line .val{font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:700;color:var(--ink);}
+
+.card-footer{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-top:18px;
+}
+.saved-tag{font-size:11.5px;color:var(--green);display:flex;align-items:center;gap:5px;opacity:0;transition:opacity .3s ease;}
+.saved-tag.show{opacity:1;}
+
+.empty{
+  text-align:center;
+  padding:60px 20px;
+  color:var(--ink-soft);
+}
+.empty .disp{font-size:16px;color:var(--ink);margin-bottom:6px;}
+
+.loading{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  padding:60px 20px;
+  color:var(--ink-soft);
+  font-size:13.5px;
+}
+.spinner{
+  width:16px;height:16px;
+  border-radius:50%;
+  border:2.5px solid var(--line-2);
+  border-top-color:var(--orange);
+  animation:spin .7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+.notice{
+  margin:0 26px 0;
+  padding:10px 14px;
+  background:var(--blue-dim);
+  color:var(--blue);
+  border-radius:10px;
+  font-size:12.5px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+@media (max-width:640px){
+  .card-head{flex-wrap:wrap;}
+  .progress-mini{order:5;width:100%;}
+  .valor-mini{order:4;text-align:left;}
+}
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+  <div class="topbar">
+    <div class="topbar-top">
+      <p class="eyebrow">Planta &middot; Control de Obras</p>
+      <button class="user-pill" id="btnUserCorner">Ingresar</button>
+    </div>
+    <div class="topbar-main">
+      <div>
+        <h1>Seguimiento de Proyectos</h1>
+        <p>Actualiza el avance de cada proyecto por etapas, registra compras y anota materiales externos a medida que aparecen.</p>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-ghost" id="btnRefresh">⟳ Actualizar</button>
+        <button class="btn btn-primary" id="btnNew">+ Nuevo proyecto</button>
+      </div>
+    </div>
+    <div class="stats" id="stats"></div>
+  </div>
+
+  <div class="notice" id="notice">
+    ⓘ Los datos viven en tu Google Sheet. Todos los coordinadores que abran esta página ven y editan la misma información.
+  </div>
+
+  <div class="controls" id="controls" style="display:none;">
+    <input type="text" id="searchInput" placeholder="Buscar por proyecto, coordinador o área…">
+    <select id="filterEstado">
+      <option value="">Todos los estados</option>
+      <option value="por_iniciar">Por iniciar</option>
+      <option value="en_pausa">En pausa</option>
+      <option value="en_progreso">En progreso</option>
+      <option value="completado">Completado</option>
+    </select>
+    <select id="filterArea"><option value="">Todas las áreas</option></select>
+  </div>
+
+  <div class="list" id="list">
+    <div class="loading"><div class="spinner"></div> Cargando proyectos…</div>
+  </div>
+</div>
+
+<script>
+(function(){
+
+/* ============================================================
+   CONFIGURACIÓN — edita estas dos líneas antes de publicar
+   ============================================================ */
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw6AUsshSJb08zV4M_y0Mbx1w1FtQAe_tDaiBvmqxJGQvtKEgBo8tAk2Tbz_6_gfXTXzg/exec'; // termina en /exec
+const API_KEY = 'Proyectos'; // debe ser IDÉNTICA a la de Code.gs
+const ADMIN_PASSWORD = 'Proyectos2026'; // clave para desbloquear modo administrador
+/* ============================================================ */
+
+let isAdmin = false;
+let currentUser = '';
+try{ currentUser = localStorage.getItem('seguimiento-currentUser') || ''; }catch(e){ currentUser = ''; }
+
+const STAGE_DEFS = [
+  {key:'apu', label:'APU'},
+  {key:'cotizacion', label:'Cotización'},
+  {key:'comparativo', label:'Comparativo y Res.'},
+  {key:'aprobacion', label:'Aprobación'},
+  {key:'solped', label:'Solped'},
+  {key:'ordenCompra', label:'Orden de Compra'},
+  {key:'inicio', label:'Inicio'},
+  {key:'finalizacion', label:'Finalización'},
+];
+
+const ESTADOS = {
+  por_iniciar: 'Por iniciar',
+  en_pausa: 'En pausa',
+  en_progreso: 'En progreso',
+  completado: 'Completado'
+};
+
+let projects = [];
+let openId = null;
+let saveTimer = null;
+const adOpen = new Set();
+
+function uid(){ return 'p_' + Math.random().toString(36).slice(2,10) + Date.now().toString(36); }
+
+function blankProject(){
+  return {
+    id: uid(),
+    _justCreated: true,
+    coordinador: currentUser || '', proyecto:'', area:'', descripcion:'',
+    solped:'', ordenCompra:'', valor:'',
+    solpedAD1:'', ordenCompraAD1:'', valorAD1:'',
+    solpedAD2:'', ordenCompraAD2:'', valorAD2:'',
+    etapas:{apu:false,cotizacion:false,comparativo:false,aprobacion:false,solped:false,ordenCompra:false,inicio:false,finalizacion:false},
+    estado:'por_iniciar',
+    observaciones:'',
+    documentos:''
+  };
+}
+
+function normalizeProject(raw){
+  return {
+    id: String(raw.id),
+    _justCreated: false,
+    coordinador: raw.coordinador||'', proyecto: raw.proyecto||'', area: raw.area||'', descripcion: raw.descripcion||'',
+    solped: raw.solped||'', ordenCompra: raw.ordenCompra||'', valor: raw.valor||'',
+    solpedAD1: raw.solpedAD1||'', ordenCompraAD1: raw.ordenCompraAD1||'', valorAD1: raw.valorAD1||'',
+    solpedAD2: raw.solpedAD2||'', ordenCompraAD2: raw.ordenCompraAD2||'', valorAD2: raw.valorAD2||'',
+    etapas: Object.assign({apu:false,cotizacion:false,comparativo:false,aprobacion:false,solped:false,ordenCompra:false,inicio:false,finalizacion:false}, raw.etapas||{}),
+    estado: raw.estado || 'por_iniciar',
+    observaciones: raw.observaciones||'',
+    documentos: raw.documentos||''
+  };
+}
+
+function seedData(){
+  return [
+    {
+      id: uid(), coordinador:'Luis Fajardo', proyecto:'Cabina de pintura', area:'ESW1 - Patio 2',
+      descripcion:'Adecuación cabina de pintura',
+      solped:'10274541', ordenCompra:'4501608272', valor:'16777605',
+      solpedAD1:'', ordenCompraAD1:'', valorAD1:'', solpedAD2:'', ordenCompraAD2:'', valorAD2:'',
+      etapas:{apu:true,cotizacion:true,comparativo:true,aprobacion:true,solped:true,ordenCompra:true,inicio:true,finalizacion:false},
+      estado:'por_iniciar',
+      observaciones:'Pendiente correo de despeje de área',
+      documentos:''
+    },
+    {
+      id: uid(), coordinador:'Luis Fajardo', proyecto:'Traslado taller de mantenimiento', area:'ESW 5',
+      descripcion:'Desacople seguro de acometidas eléctricas y/o neumáticas',
+      solped:'', ordenCompra:'', valor:'',
+      solpedAD1:'', ordenCompraAD1:'', valorAD1:'', solpedAD2:'', ordenCompraAD2:'', valorAD2:'',
+      etapas:{apu:true,cotizacion:true,comparativo:false,aprobacion:false,solped:false,ordenCompra:false,inicio:false,finalizacion:false},
+      estado:'en_pausa',
+      observaciones:'Pendiente de recibir cotizaciones',
+      documentos:''
+    },
+    {
+      id: uid(), coordinador:'Luis Fajardo', proyecto:'Carros producto mecanizado', area:'Curtain wall',
+      descripcion:'Fabricación producto mecanizado',
+      solped:'', ordenCompra:'', valor:'',
+      solpedAD1:'', ordenCompraAD1:'', valorAD1:'', solpedAD2:'', ordenCompraAD2:'', valorAD2:'',
+      etapas:{apu:true,cotizacion:true,comparativo:true,aprobacion:false,solped:false,ordenCompra:false,inicio:false,finalizacion:false},
+      estado:'en_pausa',
+      observaciones:'Pendiente por aprobación',
+      documentos:''
+    },
+    {
+      id: uid(), coordinador:'Luis Fajardo', proyecto:'Cabina de pintura Bit. Cal. y Scrap', area:'ESW 5',
+      descripcion:'Fabricación cabinas de pintura',
+      solped:'', ordenCompra:'4501606782', valor:'',
+      solpedAD1:'', ordenCompraAD1:'', valorAD1:'', solpedAD2:'', ordenCompraAD2:'', valorAD2:'',
+      etapas:{apu:false,cotizacion:false,comparativo:false,aprobacion:false,solped:false,ordenCompra:false,inicio:false,finalizacion:false},
+      estado:'por_iniciar',
+      observaciones:'',
+      documentos:''
+    }
+  ];
+}
+
+function backendConfigured(){
+  return APPS_SCRIPT_URL && APPS_SCRIPT_URL.indexOf('PEGA_AQUI') === -1;
+}
+
+function setNotice(msg, isError){
+  const el = document.getElementById('notice');
+  if(!el) return;
+  el.textContent = msg;
+  el.style.background = isError ? 'var(--maroon-dim)' : 'var(--blue-dim)';
+  el.style.color = isError ? 'var(--maroon)' : 'var(--blue)';
+}
+
+async function loadData(){
+  if(!backendConfigured()){
+    setNotice('⚠ Falta configurar APPS_SCRIPT_URL y API_KEY en el código antes de publicar. Mostrando datos de ejemplo.', true);
+    projects = seedData();
+    render();
+    return;
+  }
+  try{
+    const res = await fetch(`${APPS_SCRIPT_URL}?apiKey=${encodeURIComponent(API_KEY)}`);
+    const data = await res.json();
+    if(data && data.error){ throw new Error(data.error); }
+    projects = Array.isArray(data) ? data.map(normalizeProject) : [];
+    setNotice('ⓘ Los datos viven en tu Google Sheet. Todos los coordinadores que abran esta página ven y editan la misma información.', false);
+  }catch(e){
+    console.error('Error cargando desde Google Sheet', e);
+    setNotice('⚠ No se pudo conectar con el Google Sheet. Revisa la URL de Apps Script y tu conexión.', true);
+    projects = [];
+  }
+  render();
+}
+
+async function callBackend(payload){
+  if(!backendConfigured()) return {error:'not_configured'};
+  try{
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'}, // evita preflight CORS en Apps Script
+      body: JSON.stringify(Object.assign({apiKey:API_KEY}, payload))
+    });
+    return await res.json();
+  }catch(e){
+    console.error('Error hablando con el Google Sheet', e);
+    return {error:'network'};
+  }
+}
+
+async function createProject(p){
+  const data = await callBackend({action:'create', project:p});
+  if(data && data.error){ setNotice('⚠ No se pudo crear el proyecto en el Sheet. Intenta de nuevo.', true); return false; }
+  return true;
+}
+
+async function updateProject(p){
+  const data = await callBackend({action:'update', project:p});
+  if(data && data.error){ setNotice('⚠ No se pudo guardar el último cambio. Revisa tu conexión e inténtalo de nuevo.', true); return false; }
+  return true;
+}
+
+async function deleteProjectRemote(id){
+  const data = await callBackend({action:'delete', id});
+  if(data && data.error){ setNotice('⚠ No se pudo eliminar el proyecto en el Sheet. Intenta de nuevo.', true); return false; }
+  return true;
+}
+
+function scheduleSave(cardEl, p){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async ()=>{
+    const ok = await updateProject(p);
+    if(ok && cardEl){
+      const tag = cardEl.querySelector('.saved-tag');
+      if(tag){
+        tag.classList.add('show');
+        setTimeout(()=>tag.classList.remove('show'), 1400);
+      }
+      if(ok && p && p._justCreated){
+        p._justCreated = false;
+        if(openId === p.id){
+          cardEl.querySelector('.card-body').innerHTML = renderCardBody(p);
+          attachCardEvents(p);
+        }
+      }
+    }
+  }, 450);
+}
+
+function fmtCOP(n){
+  const num = Number(n)||0;
+  return '$' + num.toLocaleString('es-CO', {maximumFractionDigits:0});
+}
+
+function isOwner(p){
+  if(!currentUser || !p.coordinador) return false;
+  return currentUser.trim().toLowerCase() === p.coordinador.trim().toLowerCase();
+}
+function canEditOwn(p){
+  return isAdmin || isOwner(p);
+}
+
+function computeAvance(p){
+  const total = STAGE_DEFS.length;
+  const done = STAGE_DEFS.filter(s=>p.etapas[s.key]).length;
+  return Math.round((done/total)*100);
+}
+
+function computeTotal(p){
+  const base = Number(p.valor)||0;
+  const ad1 = Number(p.valorAD1)||0;
+  const ad2 = Number(p.valorAD2)||0;
+  return base + ad1 + ad2;
+}
+
+function renderStats(){
+  const el = document.getElementById('stats');
+  const total = projects.length;
+  const completados = projects.filter(p=>p.estado==='completado').length;
+  const pausa = projects.filter(p=>p.estado==='en_pausa').length;
+  el.innerHTML = `
+    <div class="stat"><div class="num">${total}</div><div class="lbl">Proyectos</div></div>
+    <div class="stat"><div class="num">${completados}</div><div class="lbl">Completados</div></div>
+    <div class="stat"><div class="num">${pausa}</div><div class="lbl">En pausa</div></div>
+  `;
+}
+
+function populateAreaFilter(){
+  const sel = document.getElementById('filterArea');
+  const current = sel.value;
+  const areas = Array.from(new Set(projects.map(p=>p.area).filter(Boolean))).sort();
+  sel.innerHTML = '<option value="">Todas las áreas</option>' + areas.map(a=>`<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('');
+  sel.value = current;
+}
+
+function escapeHtml(str){
+  return String(str||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function matchesFilters(p){
+  const q = (document.getElementById('searchInput')?.value||'').toLowerCase().trim();
+  const estadoF = document.getElementById('filterEstado')?.value||'';
+  const areaF = document.getElementById('filterArea')?.value||'';
+  if(estadoF && p.estado !== estadoF) return false;
+  if(areaF && p.area !== areaF) return false;
+  if(q){
+    const hay = [p.proyecto,p.coordinador,p.area,p.descripcion].join(' ').toLowerCase();
+    if(!hay.includes(q)) return false;
+  }
+  return true;
+}
+
+function stageIcon(){
+  return '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 7.2L5.4 10.2L11.5 3.8" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+}
+
+function render(){
+  renderStats();
+  populateAreaFilter();
+  const listEl = document.getElementById('list');
+  const controls = document.getElementById('controls');
+
+  if(projects.length === 0){
+    controls.style.display = 'none';
+    listEl.innerHTML = `<div class="empty"><div class="disp">Sin proyectos todavía</div>Crea el primero con "+ Nuevo proyecto".</div>`;
+    return;
+  }
+  controls.style.display = 'flex';
+
+  const visible = projects.filter(matchesFilters);
+  if(visible.length === 0){
+    listEl.innerHTML = `<div class="empty"><div class="disp">Nada por aquí</div>Ajusta la búsqueda o los filtros.</div>`;
+    return;
+  }
+
+  listEl.innerHTML = visible.map((p, i)=>renderCard(p, i)).join('');
+  visible.forEach(p=>attachCardEvents(p));
+}
+
+function renderCard(p, i){
+  const avance = computeAvance(p);
+  const total = computeTotal(p);
+  const isOpen = openId === p.id;
+  return `
+  <div class="card ${isOpen?'open':''} card-${p.estado}" data-id="${p.id}">
+    <div class="card-head" data-toggle="${p.id}">
+      <span class="idx mono">${String(i+1).padStart(2,'0')}</span>
+      <div class="card-titles">
+        <div class="proj">${escapeHtml(p.proyecto)||'(sin nombre)'}</div>
+        <div class="meta">${escapeHtml(p.coordinador)||'Sin coordinador'} · ${escapeHtml(p.area)||'Sin área'}</div>
+      </div>
+      <div class="progress-mini">
+        <div class="bar"><div style="width:${avance}%"></div></div>
+        <div class="pct mono">${avance}%</div>
+      </div>
+      <span class="badge badge-${p.estado}">${ESTADOS[p.estado]}</span>
+      <span class="valor-mini">${fmtCOP(total)}</span>
+      <span class="chev">▶</span>
+    </div>
+    <div class="card-body">
+      ${renderCardBody(p)}
+    </div>
+  </div>`;
+}
+
+function renderCardBody(p){
+  const avance = computeAvance(p);
+  const total = computeTotal(p);
+  const locked = !isAdmin && !p._justCreated;
+  const dis = locked ? 'disabled' : '';
+  const lockTag = locked ? '<span class="lock-tag">🔒 solo admin edita</span>' : '';
+  const hasAD1 = !!(p.solpedAD1 || p.ordenCompraAD1 || p.valorAD1);
+  const hasAD2 = !!(p.solpedAD2 || p.ordenCompraAD2 || p.valorAD2);
+  const showAD1 = adOpen.has(p.id+'_ad1') || hasAD1;
+  const showAD2 = adOpen.has(p.id+'_ad2') || hasAD2;
+  const editable = canEditOwn(p);
+  const disOwn = editable ? '' : 'disabled';
+  const readonlyTag = !editable ? '<span class="readonly-tag">👁 solo lectura</span>' : '';
+
+  return `
+    <div class="field-grid wide">
+      <div class="field"><label>Coordinador</label><input type="text" data-f="coordinador" value="${escapeHtml(p.coordinador)}" placeholder="Nombre del coordinador" ${dis}></div>
+      <div class="field"><label>Proyecto</label><input type="text" data-f="proyecto" value="${escapeHtml(p.proyecto)}" placeholder="Nombre del proyecto" ${dis}></div>
+      <div class="field"><label>Área</label><input type="text" data-f="area" value="${escapeHtml(p.area)}" placeholder="Ej. ESW1 - Patio 2" ${dis}></div>
+      <div class="field"><label>Estado</label>
+        <select data-f="estado" ${disOwn}>
+          ${Object.entries(ESTADOS).map(([k,v])=>`<option value="${k}" ${p.estado===k?'selected':''}>${v}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div class="field-grid wide">
+      <div class="field" style="grid-column:1/-1;"><label>Descripción</label><textarea data-f="descripcion" placeholder="Describe el alcance del proyecto…" ${dis}>${escapeHtml(p.descripcion)}</textarea></div>
+    </div>
+
+    <div class="section-title">Compra principal ${lockTag}</div>
+    <div class="field-grid">
+      <div class="field"><label>Solped</label><input class="mono-in" type="text" data-f="solped" value="${escapeHtml(p.solped)}" placeholder="N° solped" ${dis}></div>
+      <div class="field"><label>Orden de compra</label><input class="mono-in" type="text" data-f="ordenCompra" value="${escapeHtml(p.ordenCompra)}" placeholder="N° OC" ${dis}></div>
+      <div class="field"><label>Valor</label><input class="mono-in" type="number" data-f="valor" value="${escapeHtml(p.valor)}" placeholder="0" ${dis}></div>
+    </div>
+
+    <div class="section-title">Solped / OC adicional 1</div>
+    ${showAD1 ? `
+      <div class="field-grid">
+        <div class="field"><label>Solped AD 1</label><input class="mono-in" type="text" data-f="solpedAD1" value="${escapeHtml(p.solpedAD1)}" placeholder="N° solped AD 1" ${disOwn}></div>
+        <div class="field"><label>Orden de compra AD 1</label><input class="mono-in" type="text" data-f="ordenCompraAD1" value="${escapeHtml(p.ordenCompraAD1)}" placeholder="N° OC AD 1" ${disOwn}></div>
+        <div class="field"><label>Valor AD 1</label><input class="mono-in" type="number" data-f="valorAD1" value="${escapeHtml(p.valorAD1)}" placeholder="0" ${disOwn}></div>
+      </div>
+    ` : (editable ? `
+      <div class="ad-toggle-wrap">
+        <button class="ext-add" type="button" data-addad1>+ Añadir Solped / OC adicional 1</button>
+      </div>
+    ` : '')}
+
+    <div class="section-title">Solped / OC adicional 2</div>
+    ${showAD2 ? `
+      <div class="field-grid">
+        <div class="field"><label>Solped AD 2</label><input class="mono-in" type="text" data-f="solpedAD2" value="${escapeHtml(p.solpedAD2)}" placeholder="N° solped AD 2" ${disOwn}></div>
+        <div class="field"><label>Orden de compra AD 2</label><input class="mono-in" type="text" data-f="ordenCompraAD2" value="${escapeHtml(p.ordenCompraAD2)}" placeholder="N° OC AD 2" ${disOwn}></div>
+        <div class="field"><label>Valor AD 2</label><input class="mono-in" type="number" data-f="valorAD2" value="${escapeHtml(p.valorAD2)}" placeholder="0" ${disOwn}></div>
+      </div>
+    ` : (editable ? `
+      <div class="ad-toggle-wrap">
+        <button class="ext-add" type="button" data-addad2>+ Añadir Solped / OC adicional 2</button>
+      </div>
+    ` : '')}
+
+    <div class="section-title">Etapas del proyecto ${readonlyTag}</div>
+    <div class="pipeline">
+      ${STAGE_DEFS.map(s=>`
+        <button class="stage ${p.etapas[s.key]?'checked':''} ${editable?'':'locked'}" data-stage="${s.key}" type="button" title="${s.label}">
+          <div class="plate">${stageIcon()}</div>
+          <div class="lbl">${s.label}</div>
+        </button>
+      `).join('')}
+    </div>
+    <div class="avance-row">
+      <div class="avance-bar"><div style="width:${avance}%"></div></div>
+      <div class="avance-num mono">${avance}%</div>
+    </div>
+
+    <div class="field-grid wide" style="margin-top:16px;">
+      <div class="field" style="grid-column:1/-1;"><label>Observaciones</label><textarea data-f="observaciones" placeholder="Notas de seguimiento…" ${disOwn}>${escapeHtml(p.observaciones)}</textarea></div>
+      <div class="field" style="grid-column:1/-1;"><label>Documentos (enlace o referencia)</label><input type="text" data-f="documentos" value="${escapeHtml(p.documentos)}" placeholder="Link a carpeta, correo, o referencia" ${disOwn}></div>
+    </div>
+
+    <div class="total-line">
+      <span class="lbl">Total proyecto</span>
+      <span class="val">${fmtCOP(total)}</span>
+    </div>
+
+    <div class="card-footer">
+      ${isAdmin ? '<button class="btn btn-danger-text" data-delete type="button">Eliminar proyecto</button>' : '<span></span>'}
+      <span class="saved-tag">✓ Guardado</span>
+    </div>
+  `;
+}
+
+function attachCardEvents(p){
+  const cardEl = document.querySelector(`.card[data-id="${p.id}"]`);
+  if(!cardEl) return;
+
+  cardEl.querySelector('[data-toggle]').addEventListener('click', ()=>{
+    openId = (openId === p.id) ? null : p.id;
+    render();
+  });
+
+  if(openId !== p.id) return;
+
+  cardEl.querySelectorAll('[data-f]').forEach(el=>{
+    el.addEventListener('input', ()=>{
+      p[el.dataset.f] = el.value;
+      refreshCardSummary(cardEl, p);
+      scheduleSave(cardEl, p);
+    });
+    el.addEventListener('change', ()=>{
+      p[el.dataset.f] = el.value;
+      refreshCardSummary(cardEl, p);
+      scheduleSave(cardEl, p);
+      if(el.dataset.f === 'estado') render();
+    });
+  });
+
+  cardEl.querySelectorAll('[data-stage]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      if(!canEditOwn(p)) return;
+      const key = btn.dataset.stage;
+      p.etapas[key] = !p.etapas[key];
+      btn.classList.toggle('checked', p.etapas[key]);
+      refreshCardSummary(cardEl, p);
+      scheduleSave(cardEl, p);
+    });
+  });
+
+  const addAd1Btn = cardEl.querySelector('[data-addad1]');
+  if(addAd1Btn){
+    addAd1Btn.addEventListener('click', ()=>{
+      adOpen.add(p.id+'_ad1');
+      cardEl.querySelector('.card-body').innerHTML = renderCardBody(p);
+      attachCardEvents(p);
+    });
+  }
+
+  const addAd2Btn = cardEl.querySelector('[data-addad2]');
+  if(addAd2Btn){
+    addAd2Btn.addEventListener('click', ()=>{
+      adOpen.add(p.id+'_ad2');
+      cardEl.querySelector('.card-body').innerHTML = renderCardBody(p);
+      attachCardEvents(p);
+    });
+  }
+
+  const delBtn = cardEl.querySelector('[data-delete]');
+  if(delBtn){
+    delBtn.addEventListener('click', async ()=>{
+      if(confirm(`¿Eliminar el proyecto "${p.proyecto || '(sin nombre)'}"? Esta acción no se puede deshacer.`)){
+        delBtn.disabled = true;
+        const ok = await deleteProjectRemote(p.id);
+        if(ok){
+          projects = projects.filter(pr=>pr.id!==p.id);
+          openId = null;
+          render();
+        }else{
+          delBtn.disabled = false;
+          alert('No se pudo eliminar el proyecto en el Sheet. Intenta de nuevo.');
+        }
+      }
+    });
+  }
+}
+
+function refreshCardSummary(cardEl, p){
+  const avance = computeAvance(p);
+  const total = computeTotal(p);
+  cardEl.querySelector('.card-titles .proj').textContent = p.proyecto || '(sin nombre)';
+  cardEl.querySelector('.card-titles .meta').textContent = `${p.coordinador||'Sin coordinador'} · ${p.area||'Sin área'}`;
+  cardEl.querySelector('.progress-mini .bar > div').style.width = avance + '%';
+  cardEl.querySelector('.progress-mini .pct').textContent = avance + '%';
+  cardEl.querySelector('.valor-mini').textContent = fmtCOP(total);
+  const badge = cardEl.querySelector('.badge');
+  badge.className = 'badge badge-' + p.estado;
+  badge.textContent = ESTADOS[p.estado];
+  cardEl.className = cardEl.className.replace(/card-(por_iniciar|en_pausa|en_progreso|completado)/,'card-'+p.estado);
+  const avanceBar = cardEl.querySelector('.avance-bar > div');
+  if(avanceBar) avanceBar.style.width = avance + '%';
+  const avanceNum = cardEl.querySelector('.avance-num');
+  if(avanceNum) avanceNum.textContent = avance + '%';
+  const totalVal = cardEl.querySelector('.total-line .val');
+  if(totalVal) totalVal.textContent = fmtCOP(total);
+  renderStats();
+}
+
+function updateUserCorner(){
+  const btn = document.getElementById('btnUserCorner');
+  if(!btn) return;
+  if(!currentUser){
+    btn.textContent = 'Ingresar';
+    btn.classList.remove('logged','admin');
+  }else if(isAdmin){
+    btn.textContent = '👑 ' + currentUser;
+    btn.classList.add('logged','admin');
+  }else{
+    btn.textContent = '👤 ' + currentUser;
+    btn.classList.add('logged');
+    btn.classList.remove('admin');
+  }
+}
+
+function doLogin(){
+  const entered = window.prompt('¿Cuál es tu nombre? (debe coincidir exactamente con el nombre de Coordinador en tus proyectos)', currentUser || '');
+  if(entered === null) return;
+  currentUser = entered.trim();
+  if(!currentUser){
+    isAdmin = false;
+    try{ localStorage.removeItem('seguimiento-currentUser'); }catch(e){}
+    updateUserCorner();
+    render();
+    return;
+  }
+  try{ localStorage.setItem('seguimiento-currentUser', currentUser); }catch(e){}
+  const pass = window.prompt('Si eres administrador, escribe tu clave (déjalo vacío si no aplica):', '');
+  if(pass && pass.length){
+    if(pass === ADMIN_PASSWORD){
+      isAdmin = true;
+    }else{
+      isAdmin = false;
+      alert('Clave incorrecta — entrando como usuario normal.');
+    }
+  }else{
+    isAdmin = false;
+  }
+  updateUserCorner();
+  render();
+}
+
+document.getElementById('btnUserCorner').addEventListener('click', ()=>{
+  if(currentUser){
+    if(confirm(`¿Cerrar sesión de "${currentUser}"?`)){
+      currentUser = '';
+      isAdmin = false;
+      try{ localStorage.removeItem('seguimiento-currentUser'); }catch(e){}
+      updateUserCorner();
+      render();
+    }
+  }else{
+    doLogin();
+  }
+});
+
+document.getElementById('btnNew').addEventListener('click', async ()=>{
+  const p = blankProject();
+  const btn = document.getElementById('btnNew');
+  btn.disabled = true;
+  const original = btn.textContent;
+  btn.textContent = 'Creando…';
+  const ok = await createProject(p);
+  btn.disabled = false;
+  btn.textContent = original;
+  if(!ok){
+    alert('No se pudo crear el proyecto en el Sheet. Revisa la conexión e intenta de nuevo.');
+    return;
+  }
+  projects.unshift(p);
+  openId = p.id;
+  render();
+  const el = document.querySelector(`.card[data-id="${p.id}"] input[data-f="proyecto"]`);
+  if(el) el.focus();
+});
+
+document.getElementById('btnRefresh').addEventListener('click', async ()=>{
+  const btn = document.getElementById('btnRefresh');
+  btn.disabled = true;
+  const original = btn.textContent;
+  btn.textContent = 'Actualizando…';
+  await loadData();
+  btn.textContent = original;
+  btn.disabled = false;
+});
+
+document.getElementById('searchInput').addEventListener('input', render);
+document.getElementById('filterEstado').addEventListener('change', render);
+document.getElementById('filterArea').addEventListener('change', render);
+
+updateUserCorner();
+
+loadData();
+
+})();
+</script>
+</body>
+</html>
