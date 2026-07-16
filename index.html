@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Seguimiento de Proyectos</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
 body{margin:0;background:#EEF1F4;}
 :root{
@@ -41,7 +41,7 @@ body{margin:0;background:#EEF1F4;}
 }
 
 .app h1,.app h2,.app h3,.app .disp{
-  font-family:'Space Grotesk',sans-serif;
+  font-family:'Inter',sans-serif;
 }
 
 .mono{font-family:'IBM Plex Mono',monospace;}
@@ -97,7 +97,7 @@ body{margin:0;background:#EEF1F4;}
 .topbar h1{
   font-size:24px;
   margin:6px 0 0;
-  font-weight:700;
+  font-weight:800;
   letter-spacing:-0.01em;
 }
 .topbar p{
@@ -339,7 +339,7 @@ body{margin:0;background:#EEF1F4;}
   position:relative;
 }
 .login-card .eyebrow{margin-bottom:4px;display:block;}
-.login-card h2{font-family:'Space Grotesk',sans-serif;font-size:19px;margin:2px 0 20px;font-weight:700;}
+.login-card h2{font-family:'Inter',sans-serif;font-size:19px;margin:2px 0 20px;font-weight:700;}
 .login-close{
   position:absolute; top:14px; right:14px;
   background:none;border:none;color:#B7C1CC;
@@ -409,7 +409,7 @@ body{margin:0;background:#EEF1F4;}
 }
 
 .section-title{
-  font-family:'Space Grotesk',sans-serif;
+  font-family:'Inter',sans-serif;
   font-size:12.5px;
   font-weight:700;
   text-transform:uppercase;
@@ -602,7 +602,7 @@ body{margin:0;background:#EEF1F4;}
 </head>
 <body>
 
-<div class="app" id="app">
+<div class="app" id="app" style="display:none;">
   <div class="topbar">
     <div class="topbar-top">
       <p class="eyebrow">Planta &middot; Control de Obras</p>
@@ -634,6 +634,7 @@ body{margin:0;background:#EEF1F4;}
       <option value="completado">Completado</option>
     </select>
     <select id="filterArea"><option value="">Todas las áreas</option></select>
+    <select id="filterCoordinador"><option value="">Todos los coordinadores</option></select>
   </div>
 
   <div class="list" id="list">
@@ -643,7 +644,6 @@ body{margin:0;background:#EEF1F4;}
 
 <div class="login-overlay" id="loginOverlay">
   <div class="login-card">
-    <button class="login-close" id="loginClose" type="button">✕</button>
     <span class="eyebrow">Planta &middot; Control de Obras</span>
     <h2 id="loginTitle">Iniciar sesión</h2>
     <div class="login-field" id="loginNombreWrap" style="display:none;">
@@ -917,6 +917,14 @@ function populateAreaFilter(){
   sel.value = current;
 }
 
+function populateCoordinadorFilter(){
+  const sel = document.getElementById('filterCoordinador');
+  const current = sel.value;
+  const coords = Array.from(new Set(projects.map(p=>p.coordinador).filter(Boolean))).sort();
+  sel.innerHTML = '<option value="">Todos los coordinadores</option>' + coords.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+  sel.value = current;
+}
+
 function escapeHtml(str){
   return String(str||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
@@ -925,8 +933,10 @@ function matchesFilters(p){
   const q = (document.getElementById('searchInput')?.value||'').toLowerCase().trim();
   const estadoF = document.getElementById('filterEstado')?.value||'';
   const areaF = document.getElementById('filterArea')?.value||'';
+  const coordF = document.getElementById('filterCoordinador')?.value||'';
   if(estadoF && p.estado !== estadoF) return false;
   if(areaF && p.area !== areaF) return false;
+  if(coordF && p.coordinador !== coordF) return false;
   if(q){
     const hay = [p.proyecto,p.coordinador,p.area,p.descripcion].join(' ').toLowerCase();
     if(!hay.includes(q)) return false;
@@ -941,6 +951,7 @@ function stageIcon(){
 function render(){
   renderStats();
   populateAreaFilter();
+  populateCoordinadorFilter();
   const listEl = document.getElementById('list');
   const controls = document.getElementById('controls');
 
@@ -1074,7 +1085,7 @@ function renderCardBody(p){
     </div>
 
     <div class="card-footer">
-      ${isAdmin ? '<button class="btn btn-danger-text" data-delete type="button">Eliminar proyecto</button>' : '<span></span>'}
+      ${(isAdmin || p._justCreated) ? '<button class="btn btn-danger-text" data-delete type="button">Eliminar proyecto</button>' : '<span></span>'}
       <span class="saved-tag">✓ Guardado</span>
     </div>
   `;
@@ -1284,13 +1295,9 @@ async function submitLogin(){
   }catch(e){}
   updateUserCorner();
   closeLoginModal();
-  render();
+  enterApp();
 }
 
-document.getElementById('loginClose').addEventListener('click', closeLoginModal);
-document.getElementById('loginOverlay').addEventListener('click', (e)=>{
-  if(e.target.id === 'loginOverlay') closeLoginModal();
-});
 document.getElementById('loginToggleLink').addEventListener('click', (e)=>{
   e.preventDefault();
   setLoginMode(loginMode === 'login' ? 'register' : 'login');
@@ -1306,7 +1313,8 @@ document.getElementById('btnUserCorner').addEventListener('click', ()=>{
       isAdmin = false;
       try{ localStorage.removeItem('seguimiento-session'); }catch(e){}
       updateUserCorner();
-      render();
+      document.getElementById('app').style.display = 'none';
+      openLoginModal();
     }
   }else{
     openLoginModal();
@@ -1336,15 +1344,26 @@ document.getElementById('btnNew').addEventListener('click', async ()=>{
 document.getElementById('searchInput').addEventListener('input', render);
 document.getElementById('filterEstado').addEventListener('change', render);
 document.getElementById('filterArea').addEventListener('change', render);
+document.getElementById('filterCoordinador').addEventListener('change', render);
+
+function enterApp(){
+  document.getElementById('app').style.display = '';
+  loadData();
+}
 
 updateUserCorner();
 
-loadData();
+if(currentUser){
+  enterApp();
+}else{
+  openLoginModal();
+}
 
 // Actualización automática en segundo plano: cada 20s, solo si no hay
-// ninguna tarjeta abierta (para no pisar lo que alguien esté escribiendo).
+// ninguna tarjeta abierta (para no pisar lo que alguien esté escribiendo)
+// y solo si ya hay una sesión activa.
 setInterval(()=>{
-  if(openId === null){
+  if(currentUser && openId === null){
     loadData();
   }
 }, 20000);
