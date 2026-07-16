@@ -316,6 +316,84 @@ body{margin:0;background:#EEF1F4;}
 .user-pill:hover{background:rgba(255,255,255,.2);}
 .user-pill.logged{background:var(--blue);border-color:var(--blue);}
 .user-pill.admin{background:var(--orange);border-color:var(--orange);}
+
+/* ---------- login modal ---------- */
+.login-overlay{
+  position:fixed; inset:0;
+  background:rgba(15,20,26,.6);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:1000;
+  padding:20px;
+}
+.login-overlay.show{display:flex;}
+.login-card{
+  background:var(--steel);
+  color:#fff;
+  border-radius:16px;
+  padding:28px 26px 26px;
+  width:100%;
+  max-width:360px;
+  box-shadow:0 20px 60px -12px rgba(0,0,0,.5);
+  position:relative;
+}
+.login-card .eyebrow{margin-bottom:4px;display:block;}
+.login-card h2{font-family:'Space Grotesk',sans-serif;font-size:19px;margin:2px 0 20px;font-weight:700;}
+.login-close{
+  position:absolute; top:14px; right:14px;
+  background:none;border:none;color:#B7C1CC;
+  font-size:16px;cursor:pointer;line-height:1;
+  padding:4px;
+}
+.login-close:hover{color:#fff;}
+.login-field{margin-bottom:16px;}
+.login-field label{
+  display:block;font-size:11px;text-transform:uppercase;letter-spacing:.07em;
+  color:#9FADB9;font-weight:600;margin-bottom:6px;
+}
+.login-field input{
+  width:100%;
+  font-family:'Inter',sans-serif;
+  font-size:14px;
+  padding:11px 12px;
+  border-radius:9px;
+  border:1.5px solid rgba(255,255,255,.15);
+  background:rgba(255,255,255,.07);
+  color:#fff;
+  outline:none;
+}
+.login-field input::placeholder{color:#7C8998;}
+.login-field input:focus{border-color:var(--orange);background:rgba(255,255,255,.11);}
+.login-submit{
+  width:100%;
+  background:var(--orange);
+  color:#fff;
+  border:none;
+  font-family:'Inter',sans-serif;
+  font-weight:700;
+  font-size:14px;
+  padding:12px;
+  border-radius:10px;
+  cursor:pointer;
+  letter-spacing:.02em;
+  margin-top:16px;
+}
+.login-submit:hover{opacity:.92;}
+.login-error{
+  color:#F2A4AC;
+  font-size:12.5px;
+  margin-top:10px;
+  display:none;
+}
+.login-error.show{display:block;}
+.login-hint{
+  font-size:11.5px;
+  color:#8A97A4;
+  margin-top:6px;
+}
+.login-hint a{color:var(--orange);text-decoration:none;font-weight:600;}
+.login-hint a:hover{text-decoration:underline;}
 .stage.locked{pointer-events:none;opacity:.55;cursor:not-allowed;}
 .readonly-tag{
   font-family:'Inter',sans-serif;
@@ -536,7 +614,6 @@ body{margin:0;background:#EEF1F4;}
         <p>Actualiza el avance de cada proyecto por etapas, registra compras y anota materiales externos a medida que aparecen.</p>
       </div>
       <div class="topbar-actions">
-        <button class="btn btn-ghost" id="btnRefresh">⟳ Actualizar</button>
         <button class="btn btn-primary" id="btnNew">+ Nuevo proyecto</button>
       </div>
     </div>
@@ -564,16 +641,48 @@ body{margin:0;background:#EEF1F4;}
   </div>
 </div>
 
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-card">
+    <button class="login-close" id="loginClose" type="button">✕</button>
+    <span class="eyebrow">Planta &middot; Control de Obras</span>
+    <h2 id="loginTitle">Iniciar sesión</h2>
+    <div class="login-field" id="loginNombreWrap" style="display:none;">
+      <label>Tu nombre</label>
+      <input type="text" id="loginNombre" placeholder="Debe coincidir con tu nombre de Coordinador" autocomplete="off">
+    </div>
+    <div class="login-field">
+      <label>Usuario</label>
+      <input type="text" id="loginUsuario" placeholder="Tu usuario" autocomplete="off">
+    </div>
+    <div class="login-field" style="margin-bottom:6px;">
+      <label>Contraseña</label>
+      <input type="password" id="loginClave" placeholder="Tu contraseña" autocomplete="off">
+    </div>
+    <p class="login-error" id="loginError">Usuario o contraseña incorrectos.</p>
+    <button class="login-submit" id="loginSubmit" type="button">Entrar</button>
+    <p class="login-hint"><span id="loginToggleText">¿No tienes cuenta?</span> <a href="#" id="loginToggleLink">Créala aquí</a></p>
+  </div>
+</div>
+
 <script>
 (function(){
 
+/* ============================================================
+   CONFIGURACIÓN — edita estas dos líneas antes de publicar
+   ============================================================ */
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw6AUsshSJb08zV4M_y0Mbx1w1FtQAe_tDaiBvmqxJGQvtKEgBo8tAk2Tbz_6_gfXTXzg/exec';
 const API_KEY = 'Proyectos2026'; // debe ser IDÉNTICA a la de Code.gs
-const ADMIN_PASSWORD = 'Proyectos2026'; // clave para desbloquear modo administrador
+/* ============================================================ */
 
 let isAdmin = false;
 let currentUser = '';
-try{ currentUser = localStorage.getItem('seguimiento-currentUser') || ''; }catch(e){ currentUser = ''; }
+try{
+  const savedSession = JSON.parse(localStorage.getItem('seguimiento-session') || 'null');
+  if(savedSession && savedSession.nombre){
+    currentUser = savedSession.nombre;
+    isAdmin = !!savedSession.esAdmin;
+  }
+}catch(e){ currentUser = ''; isAdmin = false; }
 
 const STAGE_DEFS = [
   {key:'apu', label:'APU'},
@@ -1081,44 +1190,126 @@ function updateUserCorner(){
   }
 }
 
-function doLogin(){
-  const entered = window.prompt('¿Cuál es tu nombre? (debe coincidir exactamente con el nombre de Coordinador en tus proyectos)', currentUser || '');
-  if(entered === null) return;
-  currentUser = entered.trim();
-  if(!currentUser){
-    isAdmin = false;
-    try{ localStorage.removeItem('seguimiento-currentUser'); }catch(e){}
-    updateUserCorner();
-    render();
+let loginMode = 'login';
+
+function setLoginMode(mode){
+  loginMode = mode;
+  const nombreWrap = document.getElementById('loginNombreWrap');
+  const title = document.getElementById('loginTitle');
+  const submitBtn = document.getElementById('loginSubmit');
+  const toggleText = document.getElementById('loginToggleText');
+  const toggleLink = document.getElementById('loginToggleLink');
+  document.getElementById('loginError').classList.remove('show');
+  if(mode === 'register'){
+    nombreWrap.style.display = '';
+    title.textContent = 'Crear cuenta';
+    submitBtn.textContent = 'Crear cuenta';
+    toggleText.textContent = '¿Ya tienes cuenta?';
+    toggleLink.textContent = 'Inicia sesión';
+  }else{
+    nombreWrap.style.display = 'none';
+    title.textContent = 'Iniciar sesión';
+    submitBtn.textContent = 'Entrar';
+    toggleText.textContent = '¿No tienes cuenta?';
+    toggleLink.textContent = 'Créala aquí';
+  }
+}
+
+function openLoginModal(){
+  setLoginMode('login');
+  document.getElementById('loginNombre').value = '';
+  document.getElementById('loginUsuario').value = '';
+  document.getElementById('loginClave').value = '';
+  document.getElementById('loginError').classList.remove('show');
+  document.getElementById('loginOverlay').classList.add('show');
+  setTimeout(()=>document.getElementById('loginUsuario').focus(), 50);
+}
+
+function closeLoginModal(){
+  document.getElementById('loginOverlay').classList.remove('show');
+}
+
+async function submitLogin(){
+  const usuario = document.getElementById('loginUsuario').value.trim();
+  const clave = document.getElementById('loginClave').value;
+  const errEl = document.getElementById('loginError');
+  errEl.classList.remove('show');
+
+  if(!usuario || !clave){
+    errEl.textContent = 'Escribe tu usuario y tu contraseña.';
+    errEl.classList.add('show');
     return;
   }
-  try{ localStorage.setItem('seguimiento-currentUser', currentUser); }catch(e){}
-  const pass = window.prompt('Si eres administrador, escribe tu clave (déjalo vacío si no aplica):', '');
-  if(pass && pass.length){
-    if(pass === ADMIN_PASSWORD){
-      isAdmin = true;
-    }else{
-      isAdmin = false;
-      alert('Clave incorrecta — entrando como usuario normal.');
+
+  const btn = document.getElementById('loginSubmit');
+  const original = btn.textContent;
+  btn.disabled = true;
+  let data;
+
+  if(loginMode === 'register'){
+    const nombre = document.getElementById('loginNombre').value.trim();
+    if(!nombre){
+      errEl.textContent = 'Escribe tu nombre (debe coincidir con tu nombre de Coordinador).';
+      errEl.classList.add('show');
+      btn.disabled = false;
+      return;
+    }
+    btn.textContent = 'Creando…';
+    data = await callBackend({action:'register', usuario, clave, nombre});
+    btn.disabled = false;
+    btn.textContent = original;
+    if(!data || data.error){
+      errEl.textContent = (data && data.error === 'user_exists')
+        ? 'Ese usuario ya existe, elige otro.'
+        : 'No se pudo crear la cuenta. Intenta de nuevo.';
+      errEl.classList.add('show');
+      return;
     }
   }else{
-    isAdmin = false;
+    btn.textContent = 'Entrando…';
+    data = await callBackend({action:'login', usuario, clave});
+    btn.disabled = false;
+    btn.textContent = original;
+    if(!data || data.error || !data.ok){
+      errEl.textContent = 'Usuario o contraseña incorrectos.';
+      errEl.classList.add('show');
+      return;
+    }
   }
+
+  currentUser = data.nombre;
+  isAdmin = !!data.esAdmin;
+  try{
+    localStorage.setItem('seguimiento-session', JSON.stringify({nombre:currentUser, esAdmin:isAdmin}));
+  }catch(e){}
   updateUserCorner();
+  closeLoginModal();
   render();
 }
+
+document.getElementById('loginClose').addEventListener('click', closeLoginModal);
+document.getElementById('loginOverlay').addEventListener('click', (e)=>{
+  if(e.target.id === 'loginOverlay') closeLoginModal();
+});
+document.getElementById('loginToggleLink').addEventListener('click', (e)=>{
+  e.preventDefault();
+  setLoginMode(loginMode === 'login' ? 'register' : 'login');
+});
+document.getElementById('loginSubmit').addEventListener('click', submitLogin);
+document.getElementById('loginUsuario').addEventListener('keydown', (e)=>{ if(e.key==='Enter') submitLogin(); });
+document.getElementById('loginClave').addEventListener('keydown', (e)=>{ if(e.key==='Enter') submitLogin(); });
 
 document.getElementById('btnUserCorner').addEventListener('click', ()=>{
   if(currentUser){
     if(confirm(`¿Cerrar sesión de "${currentUser}"?`)){
       currentUser = '';
       isAdmin = false;
-      try{ localStorage.removeItem('seguimiento-currentUser'); }catch(e){}
+      try{ localStorage.removeItem('seguimiento-session'); }catch(e){}
       updateUserCorner();
       render();
     }
   }else{
-    doLogin();
+    openLoginModal();
   }
 });
 
@@ -1142,16 +1333,6 @@ document.getElementById('btnNew').addEventListener('click', async ()=>{
   if(el) el.focus();
 });
 
-document.getElementById('btnRefresh').addEventListener('click', async ()=>{
-  const btn = document.getElementById('btnRefresh');
-  btn.disabled = true;
-  const original = btn.textContent;
-  btn.textContent = 'Actualizando…';
-  await loadData();
-  btn.textContent = original;
-  btn.disabled = false;
-});
-
 document.getElementById('searchInput').addEventListener('input', render);
 document.getElementById('filterEstado').addEventListener('change', render);
 document.getElementById('filterArea').addEventListener('change', render);
@@ -1159,6 +1340,14 @@ document.getElementById('filterArea').addEventListener('change', render);
 updateUserCorner();
 
 loadData();
+
+// Actualización automática en segundo plano: cada 20s, solo si no hay
+// ninguna tarjeta abierta (para no pisar lo que alguien esté escribiendo).
+setInterval(()=>{
+  if(openId === null){
+    loadData();
+  }
+}, 20000);
 
 })();
 </script>
